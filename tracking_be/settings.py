@@ -136,7 +136,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:8000",
-    "https://tracking.sixdesign.ca",
+    "https://analytics.homebaba.ca",
 ]
 
 CORS_ALLOWED_METHODS = [
@@ -178,5 +178,5 @@ SIMPLE_JWT = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-SITE_URL = 'https://tracking.sixdesign.ca'
+SITE_URL = 'https://analytics.homebaba.ca'
 WS_URL = 'ws://127.0.0.1:8000'
