@@ -12,13 +12,11 @@ from .serializers import (
     ChatMessageSerializer
 )
 from django.shortcuts import get_object_or_404
-import json
 from django.db.models import Count
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.db import models
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
+from django.http import JsonResponse
 
 class WebsiteViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -128,29 +126,10 @@ def send_message(request):
             message=message,
             is_admin=is_admin
         )
-        
-        # Update last message
         chat.update_last_message(message)
-        
-        # Get the serialized message
-        serialized_message = ChatMessageSerializer(chat_message).data
-        
-        # Send to channel layer
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f'chat_{chat.visitor_id}',
-            {
-                'type': 'chat_message',
-                'message': serialized_message
-            }
-        )
-        
-        return Response(serialized_message)
+        return Response(ChatMessageSerializer(chat_message).data)
     except Chat.DoesNotExist:
         return Response({"error": "Chat not found"}, status=404)
-    except Exception as e:
-        print(f"Error sending message: {e}")
-        return Response({"error": str(e)}, status=400)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -218,34 +197,18 @@ def person_activities(request, pk):
 
 @api_view(['GET'])
 def chat_messages(request, chat_id):
+    since = request.GET.get('since', '0')
     try:
-        # First verify the chat exists
-        chat = get_object_or_404(Chat, id=chat_id)
-        
-        messages = ChatMessage.objects.filter(
-            chat_id=chat_id
-        ).order_by('created_at')
-        
-        serialized_messages = ChatMessageSerializer(messages, many=True).data
-        print(f"Fetched {len(serialized_messages)} messages for chat {chat_id}")
-        
-        return Response({
-            'messages': serialized_messages,
-            'chat_id': chat_id,
-            'total_count': len(serialized_messages)
-        })
-        
-    except Chat.DoesNotExist:
-        return Response(
-            {'error': f'Chat {chat_id} not found'},
-            status=404
-        )
-    except Exception as e:
-        print(f"Error fetching messages for chat {chat_id}: {str(e)}")
-        return Response(
-            {'error': str(e)},
-            status=500
-        )
+        since_dt = datetime.fromtimestamp(float(since))
+    except ValueError:
+        since_dt = datetime.fromtimestamp(0)
+
+    messages = ChatMessage.objects.filter(
+        chat_id=chat_id,
+        created_at__gt=since_dt
+    ).order_by('created_at')
+
+    return Response(ChatMessageSerializer(messages, many=True).data)
 
 @api_view(['GET'])
 def live_visitors(request):

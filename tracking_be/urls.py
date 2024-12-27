@@ -8,6 +8,8 @@ from activity.views import (
     live_visitors, visitor_activities, initiate_chat,
     visitor_chat, get_visitor_chat
 )
+from django.conf import settings
+from django.conf.urls.static import static
 
 router = DefaultRouter()
 router.register(r'websites', WebsiteViewSet, basename='website')
@@ -27,4 +29,4 @@ urlpatterns = [
     path('api/chat/initiate/', initiate_chat, name='initiate-chat'),
     path('api/visitor/<str:visitor_id>/chat/', visitor_chat, name='visitor-chat'),
     path('api/chat/visitor/<str:visitor_id>/chat/', get_visitor_chat, name='get-visitor-chat'),
-]
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
