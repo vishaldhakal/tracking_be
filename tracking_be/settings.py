@@ -70,15 +70,15 @@ WSGI_APPLICATION = 'tracking_be.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
+""" DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
-}
+} """
 
 
-""" DATABASES = {
+DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'tracking',
@@ -87,7 +87,7 @@ DATABASES = {
         'HOST': 'localhost',
         'PORT': '5432',
     }
-} """
+}
 
 
 # Password validation
