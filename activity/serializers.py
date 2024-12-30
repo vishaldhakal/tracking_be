@@ -46,6 +46,15 @@ class ChatMessageSerializer(serializers.ModelSerializer):
         fields = ['id', 'chat', 'message', 'is_admin', 'created_at']
 
 class ChatSerializer(serializers.ModelSerializer):
+    last_heartbeat = serializers.SerializerMethodField()
+
+    def get_last_heartbeat(self, obj):
+        last_activity = Activity.objects.filter(
+            visitor_id=obj.visitor_id,
+            activity_type='Heartbeat'
+        ).order_by('-last_heartbeat').first()
+        return last_activity.last_heartbeat if last_activity else None
+
     messages = ChatMessageSerializer(many=True, read_only=True)
     people = PeopleSerializer(read_only=True)
     
