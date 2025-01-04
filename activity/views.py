@@ -38,9 +38,31 @@ def track_event(request):
         
         visitor_id = serializer.validated_data.get('visitor_id')
         visitor_email = serializer.validated_data.get('visitor_email')
+
+        form_data = serializer.validated_data.get('form_data', {})
         
-        # Try to find existing person
+        # Try to identify the user
+        email = form_data.get('email')
+
         person = None
+        if email:
+            name = form_data.get('name')
+            phone = form_data.get('phone')
+            
+            # Update or create person with all available identifiers
+            person, created = People.objects.update_or_create(
+                email=email,
+                defaults={
+                    'name': name or email.split('@')[0],
+                    'phone': phone or '',
+                    'visitor_id': visitor_id,
+                    'user_agent': serializer.validated_data.get('user_agent'),
+                    'language': serializer.validated_data.get('language'),
+                    'screen_resolution': serializer.validated_data.get('screen_resolution'),
+                    'timezone': serializer.validated_data.get('timezone'),
+                }
+            )
+            
         if visitor_email:
             person = People.objects.filter(email=visitor_email).first()
             if not person:

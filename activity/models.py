@@ -58,7 +58,7 @@ class Website(models.Model):
 
             function track(eventType, data) {{
                 const commonData = {{
-                    visitor_id: visitorId,
+                    visitor_id: visitorId || generateFingerprint,
                     visitor_email: visitorEmail,
                     user_agent: navigator.userAgent,
                     language: navigator.language,
@@ -115,6 +115,27 @@ class Website(models.Model):
                     CHAT_URL,
                     SITE_ID
                 }});
+            }});
+
+            document.addEventListener('submit', function(e) {{
+                const form = e.target;
+                const formData = new FormData(form);
+                const data = {{}};
+                formData.forEach((value, key) => data[key] = value);
+                
+                if (data.email) {{
+                    localStorage.setItem('visitorEmail', data.email);
+                    localStorage.setItem('visitorId', btoa(data.email));
+                    visitorEmail = data.email;
+                    visitorId = btoa(data.email);
+                }}
+                
+                track('Form Submission', {{
+                    form_data: data,
+                    form_id: form.id || 'unknown',
+                    page_url: window.location.href,
+                        page_referrer: document.referrer || null
+                    }});
             }});
 
             // Handle page visibility
