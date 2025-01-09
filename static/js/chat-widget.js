@@ -27,10 +27,10 @@ class ChatWidget {
                 font-family: system-ui, -apple-system, sans-serif;
             }
             .chat-toggle {
-                width: 60px;
-                height: 60px;
+                width: 50px;
+                height: 50px;
                 border-radius: 30px;
-                background: #0070f3;
+                background: black;
                 color: white;
                 border: none;
                 cursor: pointer;
@@ -93,9 +93,15 @@ class ChatWidget {
                 padding: 8px 12px;
                 border-radius: 12px;
                 margin: 4px 0;
+                font-size: 13px;
+                line-height: 1.4;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                cursor: pointer;
             }
             .chat-message.visitor {
-                background: #0070f3;
+                background: black;
                 color: white;
                 align-self: flex-end;
             }
@@ -118,12 +124,20 @@ class ChatWidget {
                 outline: none;
             }
             .chat-send {
-                background: #0070f3;
+                background: black;
                 color: white;
                 border: none;
                 border-radius: 20px;
                 padding: 8px 16px;
                 cursor: pointer;
+            }
+            .chat-message.expanded {
+                white-space: normal;
+                overflow: visible;
+            }
+            .chat-message .timestamp {
+                font-size: 11px;
+                opacity: 0.7;
             }
         `;
     document.head.appendChild(styles);
@@ -141,7 +155,7 @@ class ChatWidget {
             </button>
             <div class="chat-box">
                 <div class="chat-header">
-                    <h3 class="chat-title">Chat with us</h3>
+                    <h4 class="chat-title">Homebaba Agent</h4>
                     <button class="chat-close">✕</button>
                 </div>
                 <div class="chat-messages"></div>
@@ -213,12 +227,25 @@ class ChatWidget {
     messageEl.className = `chat-message ${
       message.is_admin ? "admin" : "visitor"
     }`;
+
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const messageText = message.message.replace(urlRegex, (url) => {
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    });
+
     messageEl.innerHTML = `
-            ${message.message}
-            <div style="font-size: 0.8em; opacity: 0.7;">
-                ${new Date(message.created_at).toLocaleTimeString()}
-            </div>
-        `;
+        <span class="message-text">${messageText}</span>
+        <div class="timestamp">
+            ${new Date(message.created_at).toLocaleTimeString()}
+        </div>
+    `;
+
+    messageEl.addEventListener("click", (e) => {
+      if (e.target.tagName !== "A") {
+        messageEl.classList.toggle("expanded");
+      }
+    });
+
     messagesContainer.appendChild(messageEl);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }
