@@ -14,6 +14,8 @@ class ChatWidget {
     this.injectStyles();
     this.createWidget();
     this.initializeChat();
+    this.startPolling();
+    this.initializeNotifications();
   }
 
   injectStyles() {
@@ -234,7 +236,6 @@ class ChatWidget {
         badge.textContent = "0";
         toggle.classList.remove("has-new");
         input.focus();
-        this.startPolling();
 
         // Scroll to latest message
         const messagesContainer = widget.querySelector(".chat-messages");
@@ -242,10 +243,6 @@ class ChatWidget {
           setTimeout(() => {
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
           }, 100);
-        }
-      } else {
-        if (this.pollInterval) {
-          clearInterval(this.pollInterval);
         }
       }
     });
@@ -337,7 +334,6 @@ class ChatWidget {
             }
           });
         }
-        this.startPolling();
       }
     } catch (error) {
       console.error("Error initializing chat:", error);
@@ -349,7 +345,18 @@ class ChatWidget {
       clearInterval(this.pollInterval);
     }
 
-    this.pollInterval = setInterval(() => this.pollMessages(), 1000);
+    const poll = async () => {
+      try {
+        await this.pollMessages();
+      } catch (error) {
+        console.error("Error in polling:", error);
+      }
+    };
+
+    // Initial poll
+    poll();
+    // Then start interval
+    this.pollInterval = setInterval(poll, 1000);
   }
 
   async pollMessages() {
