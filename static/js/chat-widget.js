@@ -44,7 +44,7 @@ class ChatWidget {
                 position: absolute;
                 top: -5px;
                 right: -5px;
-                background: #ff4444;
+                background: black;
                 color: white;
                 border-radius: 10px;
                 padding: 2px 6px;
