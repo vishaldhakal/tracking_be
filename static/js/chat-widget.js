@@ -56,7 +56,9 @@ class ChatWidget {
                 bottom: 80px;
                 right: 0;
                 width: 300px;
-                height: 400px;
+                max-height: 400px;
+                min-height: 250px;
+                height: auto;
                 background: white;
                 border-radius: 12px;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -87,6 +89,7 @@ class ChatWidget {
                 display: flex;
                 flex-direction: column;
                 gap: 8px;
+                scroll-behavior: smooth;
             }
             .chat-message {
                 max-width: 80%;
@@ -151,6 +154,34 @@ class ChatWidget {
                 0%, 100% { transform: scale(1); }
                 50% { transform: scale(1.1); }
             }
+            .chat-preview {
+                position: absolute;
+                bottom: 70px;
+                right: 60px;
+                background: white;
+                padding: 8px 12px;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                max-width: 200px;
+                font-size: 13px;
+                display: none;
+                animation: slideIn 0.3s ease-out;
+                z-index: 999;
+            }
+            .chat-preview-content {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                margin-bottom: 4px;
+            }
+            .chat-preview-time {
+                font-size: 11px;
+                opacity: 0.7;
+            }
+            @keyframes slideIn {
+                0% { transform: translateY(20px); opacity: 0; }
+                100% { transform: translateY(0); opacity: 1; }
+            }
         `;
     document.head.appendChild(styles);
   }
@@ -190,14 +221,28 @@ class ChatWidget {
     const badge = widget.querySelector(".chat-badge");
 
     toggle.addEventListener("click", () => {
+      const preview = document.querySelector(".chat-preview");
+      if (preview) {
+        preview.style.display = "none";
+      }
+
       chatBox.style.display =
         chatBox.style.display === "none" ? "flex" : "none";
+
       if (chatBox.style.display === "flex") {
         badge.style.display = "none";
         badge.textContent = "0";
         toggle.classList.remove("has-new");
         input.focus();
         this.startPolling();
+
+        // Scroll to latest message
+        const messagesContainer = widget.querySelector(".chat-messages");
+        if (messagesContainer) {
+          setTimeout(() => {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          }, 100);
+        }
       } else {
         if (this.pollInterval) {
           clearInterval(this.pollInterval);
@@ -329,6 +374,7 @@ class ChatWidget {
       const newMessages = await response.json();
       if (newMessages && newMessages.length > 0) {
         let hasNewAdminMessages = false;
+        let latestAdminMessage = null;
 
         newMessages.forEach((message) => {
           if (!this.messages.has(message.id)) {
@@ -339,6 +385,7 @@ class ChatWidget {
             }
             if (message.is_admin) {
               hasNewAdminMessages = true;
+              latestAdminMessage = message;
             }
           }
         });
@@ -353,12 +400,20 @@ class ChatWidget {
           badge.style.display = "block";
           chatToggle.classList.add("has-new");
 
+          // Show preview message
+          const existingPreview = document.querySelector(".chat-preview");
+          if (existingPreview) {
+            existingPreview.remove();
+          }
+          const preview = this.createPreviewMessage(latestAdminMessage);
+          preview.style.display = "block";
+
           if (
             "Notification" in window &&
             Notification.permission === "granted"
           ) {
             new Notification("New message from Homebaba Agent", {
-              body: newMessages[newMessages.length - 1].message,
+              body: latestAdminMessage.message,
             });
           }
         }
@@ -443,6 +498,25 @@ class ChatWidget {
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
+  }
+
+  createPreviewMessage(message) {
+    const preview = document.createElement("div");
+    preview.className = "chat-preview";
+    preview.innerHTML = `
+        <div class="chat-preview-content">${message.message}</div>
+        <div class="chat-preview-time">${new Date(
+          message.created_at
+        ).toLocaleTimeString()}</div>
+    `;
+    document.body.appendChild(preview);
+
+    // Auto-hide preview after 5 seconds
+    setTimeout(() => {
+      preview.style.display = "none";
+    }, 5000);
+
+    return preview;
   }
 }
 
