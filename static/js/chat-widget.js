@@ -87,7 +87,7 @@ class ChatWidget {
             .chat-messages {
                 flex: 1;
                 overflow-y: auto;
-                padding: 16px;
+                padding: 5px;
                 display: flex;
                 flex-direction: column;
                 gap: 8px;
@@ -95,7 +95,7 @@ class ChatWidget {
             }
             .chat-message {
                 max-width: 80%;
-                padding: 8px 12px;
+                padding: 3px 3px;
                 border-radius: 12px;
                 margin: 4px 0;
                 font-size: 13px;
