@@ -95,13 +95,12 @@ class ChatWidget {
             }
             .chat-message {
                 max-width: 80%;
-                padding: 3px 3px;
+                padding: 8px 11px;
                 border-radius: 12px;
                 margin: 4px 0;
                 font-size: 13px;
                 line-height: 1.4;
                 word-wrap: break-word;
-                white-space: pre-wrap;
             }
             .chat-message.visitor {
                 background: black;
@@ -141,6 +140,7 @@ class ChatWidget {
             .chat-message .timestamp {
                 font-size: 11px;
                 opacity: 0.7;
+                margin-top: 8px;
             }
             .chat-message.new-message {
                 animation: popIn 0.3s ease-out;
