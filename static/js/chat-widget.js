@@ -167,7 +167,7 @@ class ChatWidget {
                 max-width: 200px;
                 font-size: 13px;
                 display: none;
-                animation: slideIn 0.3s ease-out;
+                animation: slideIn 1s ease-out;
                 z-index: 999;
             }
             .chat-preview-content {
