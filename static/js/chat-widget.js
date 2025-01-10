@@ -365,9 +365,74 @@ class ChatWidget {
     if (!this.visitorId) return;
 
     try {
-      // Skip polling if no active chat yet
+      // First check for any new chats if we don't have an active chat
+      if (!this.activeChat) {
+        const chatResponse = await fetch(
+          `${this.CHAT_URL}visitor/${encodeURIComponent(this.visitorId)}/chat/`,
+          {
+            headers: {
+              Accept: "application/json",
+            },
+          }
+        );
+
+        if (chatResponse.ok) {
+          const chatData = await chatResponse.json();
+          if (chatData && chatData.id) {
+            this.activeChat = chatData;
+            // Process initial messages
+            if (chatData.messages?.length) {
+              let hasNewAdminMessages = false;
+              let latestAdminMessage = null;
+
+              chatData.messages.forEach((message) => {
+                if (!this.messages.has(message.id)) {
+                  this.messages.set(message.id, message);
+                  if (message.created_at > this.lastMessageTime) {
+                    this.lastMessageTime = message.created_at;
+                  }
+                  if (message.is_admin) {
+                    hasNewAdminMessages = true;
+                    latestAdminMessage = message;
+                  }
+                }
+              });
+
+              // Show notification for new chat
+              if (hasNewAdminMessages) {
+                const chatToggle = document.querySelector(".chat-toggle");
+                const badge = document.querySelector(".chat-badge");
+
+                badge.textContent = "1";
+                badge.style.display = "block";
+                chatToggle.classList.add("has-new");
+
+                // Show preview message
+                const existingPreview = document.querySelector(".chat-preview");
+                if (existingPreview) {
+                  existingPreview.remove();
+                }
+                const preview = this.createPreviewMessage(latestAdminMessage);
+                preview.style.display = "block";
+
+                if (
+                  "Notification" in window &&
+                  Notification.permission === "granted"
+                ) {
+                  new Notification("New message from Homebaba Agent", {
+                    body: latestAdminMessage.message,
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Skip regular polling if still no active chat
       if (!this.activeChat) return;
 
+      // Regular polling for new messages
       const response = await fetch(
         `${this.CHAT_URL}${this.activeChat.id}/messages/?since=${
           this.lastMessageTime || 0
