@@ -200,7 +200,7 @@ class ChatWidget {
             </button>
             <div class="chat-box">
                 <div class="chat-header">
-                    <h4 class="chat-title">Homebaba Agent</h4>
+                    <h4 class="chat-title">Homebaba Team</h4>
                     <button class="chat-close">✕</button>
                 </div>
                 <div class="chat-messages"></div>
