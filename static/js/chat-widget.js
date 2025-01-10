@@ -221,6 +221,7 @@ class ChatWidget {
     const input = widget.querySelector(".chat-input");
     const sendBtn = widget.querySelector(".chat-send");
     const badge = widget.querySelector(".chat-badge");
+    const messagesContainer = widget.querySelector(".chat-messages");
 
     toggle.addEventListener("click", () => {
       const preview = document.querySelector(".chat-preview");
@@ -228,22 +229,25 @@ class ChatWidget {
         preview.style.display = "none";
       }
 
-      chatBox.style.display =
-        chatBox.style.display === "none" ? "flex" : "none";
+      const isOpening = chatBox.style.display === "none";
+      chatBox.style.display = isOpening ? "flex" : "none";
 
-      if (chatBox.style.display === "flex") {
+      if (isOpening) {
+        // Clear and display all stored messages when opening
+        messagesContainer.innerHTML = "";
+        Array.from(this.messages.values())
+          .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+          .forEach((message) => this.appendMessage(message));
+
         badge.style.display = "none";
         badge.textContent = "0";
         toggle.classList.remove("has-new");
         input.focus();
 
         // Scroll to latest message
-        const messagesContainer = widget.querySelector(".chat-messages");
-        if (messagesContainer) {
-          setTimeout(() => {
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-          }, 100);
-        }
+        setTimeout(() => {
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }, 100);
       }
     });
 
@@ -324,11 +328,9 @@ class ChatWidget {
       if (data && data.id) {
         this.activeChat = data;
         if (data.messages?.length) {
-          const messagesContainer = document.querySelector(".chat-messages");
-          messagesContainer.innerHTML = "";
+          // Store messages but don't display them yet
           data.messages.forEach((message) => {
             this.messages.set(message.id, message);
-            this.appendMessage(message);
             if (message.created_at > this.lastMessageTime) {
               this.lastMessageTime = message.created_at;
             }
@@ -360,7 +362,7 @@ class ChatWidget {
   }
 
   async pollMessages() {
-    if (!this.activeChat) return;
+    if (!this.visitorId) return;
 
     try {
       const response = await fetch(
@@ -386,7 +388,6 @@ class ChatWidget {
         newMessages.forEach((message) => {
           if (!this.messages.has(message.id)) {
             this.messages.set(message.id, message);
-            this.appendMessage(message, true);
             if (message.created_at > this.lastMessageTime) {
               this.lastMessageTime = message.created_at;
             }
@@ -401,7 +402,13 @@ class ChatWidget {
         const chatToggle = document.querySelector(".chat-toggle");
         const badge = document.querySelector(".chat-badge");
 
-        if (chatBox.style.display === "none" && hasNewAdminMessages) {
+        // Only append messages if chat box is open
+        if (chatBox.style.display === "flex") {
+          newMessages.forEach((message) => this.appendMessage(message, true));
+        }
+
+        // Show notifications regardless of chat box state
+        if (hasNewAdminMessages) {
           const currentCount = parseInt(badge.textContent || "0");
           badge.textContent = currentCount + 1;
           badge.style.display = "block";
