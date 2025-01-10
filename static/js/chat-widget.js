@@ -365,6 +365,9 @@ class ChatWidget {
     if (!this.visitorId) return;
 
     try {
+      // Skip polling if no active chat yet
+      if (!this.activeChat) return;
+
       const response = await fetch(
         `${this.CHAT_URL}${this.activeChat.id}/messages/?since=${
           this.lastMessageTime || 0
@@ -385,16 +388,19 @@ class ChatWidget {
         let hasNewAdminMessages = false;
         let latestAdminMessage = null;
 
-        newMessages.forEach((message) => {
-          if (!this.messages.has(message.id)) {
-            this.messages.set(message.id, message);
-            if (message.created_at > this.lastMessageTime) {
-              this.lastMessageTime = message.created_at;
-            }
-            if (message.is_admin) {
-              hasNewAdminMessages = true;
-              latestAdminMessage = message;
-            }
+        // Process new messages
+        const actualNewMessages = newMessages.filter(
+          (message) => !this.messages.has(message.id)
+        );
+
+        actualNewMessages.forEach((message) => {
+          this.messages.set(message.id, message);
+          if (message.created_at > this.lastMessageTime) {
+            this.lastMessageTime = message.created_at;
+          }
+          if (message.is_admin) {
+            hasNewAdminMessages = true;
+            latestAdminMessage = message;
           }
         });
 
@@ -402,12 +408,14 @@ class ChatWidget {
         const chatToggle = document.querySelector(".chat-toggle");
         const badge = document.querySelector(".chat-badge");
 
-        // Only append messages if chat box is open
-        if (chatBox.style.display === "flex") {
-          newMessages.forEach((message) => this.appendMessage(message, true));
+        // Only append actual new messages if chat box is open
+        if (chatBox.style.display === "flex" && actualNewMessages.length > 0) {
+          actualNewMessages.forEach((message) =>
+            this.appendMessage(message, true)
+          );
         }
 
-        // Show notifications regardless of chat box state
+        // Show notifications for new admin messages
         if (hasNewAdminMessages) {
           const currentCount = parseInt(badge.textContent || "0");
           badge.textContent = currentCount + 1;
