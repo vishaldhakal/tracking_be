@@ -17,6 +17,12 @@ class ChatWidget {
     this.initializeChat();
     this.startPolling();
     this.initializeNotifications();
+
+    // Update the audio path to use Django static URL pattern
+    const staticUrl =
+      document.querySelector('meta[name="static-url"]')?.content || "/static/";
+    this.notificationSound = new Audio("../notification.MP3");
+    this.notificationSound.volume = 0.5;
   }
 
   injectStyles() {
@@ -282,6 +288,44 @@ class ChatWidget {
                 padding-bottom: env(safe-area-inset-bottom);
             }
         }
+
+        .chat-sound-toggle {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            cursor: pointer;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
+            margin-right: 8px;
+        }
+
+        .chat-sound-toggle:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .chat-sound-toggle.muted {
+            opacity: 0.5;
+        }
+
+        .chat-sound-toggle.muted svg {
+            position: relative;
+        }
+
+        .chat-sound-toggle.muted svg:after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: currentColor;
+            transform: rotate(45deg);
+            top: 50%;
+            left: 0;
+        }
     `;
     document.head.appendChild(styles);
   }
@@ -382,6 +426,37 @@ class ChatWidget {
         sendMessage();
       }
     });
+
+    // Initialize sound on first click
+    toggle.addEventListener(
+      "click",
+      () => {
+        this.initializeSound();
+        // ... rest of click handler
+      },
+      { once: true }
+    ); // This ensures it only runs once
+
+    // Add sound controls to chat header
+    const chatHeader = widget.querySelector(".chat-header");
+    const soundToggle = document.createElement("button");
+    soundToggle.className = "chat-sound-toggle";
+    soundToggle.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+      </svg>
+    `;
+    soundToggle.setAttribute("aria-label", "Toggle notification sound");
+
+    let isMuted = false;
+    soundToggle.addEventListener("click", () => {
+      isMuted = !isMuted;
+      this.notificationSound.volume = isMuted ? 0 : 0.5;
+      soundToggle.classList.toggle("muted", isMuted);
+    });
+
+    chatHeader.insertBefore(soundToggle, chatHeader.lastElementChild);
   }
 
   appendMessage(message, isNew = false) {
@@ -586,8 +661,17 @@ class ChatWidget {
           );
         }
 
-        // Show notifications for new admin messages
+        // Show notifications and play sound for new admin messages
         if (hasNewAdminMessages) {
+          // Play notification sound if chat is not open
+          if (!this.isOpen) {
+            try {
+              await this.notificationSound.play();
+            } catch (error) {
+              console.warn("Could not play notification sound:", error);
+            }
+          }
+
           const currentCount = parseInt(badge.textContent || "0");
           badge.textContent = currentCount + 1;
           badge.style.display = "block";
@@ -713,6 +797,14 @@ class ChatWidget {
     }, 7000);
 
     return preview;
+  }
+
+  // Add method to handle sound initialization (to be called on first user interaction)
+  initializeSound() {
+    if (!this.notificationSound.src) {
+      this.notificationSound = new Audio("../notification.MP3");
+      this.notificationSound.load();
+    }
   }
 }
 
