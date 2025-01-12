@@ -18,10 +18,8 @@ class ChatWidget {
     this.startPolling();
     this.initializeNotifications();
 
-    // Update the audio path to use Django static URL pattern
-    const staticUrl =
-      document.querySelector('meta[name="static-url"]')?.content || "/static/";
-    this.notificationSound = new Audio("../notification.MP3");
+    // Use absolute path from static root
+    this.notificationSound = new Audio("/static/notification.MP3");
     this.notificationSound.volume = 0.5;
   }
 
@@ -802,7 +800,7 @@ class ChatWidget {
   // Add method to handle sound initialization (to be called on first user interaction)
   initializeSound() {
     if (!this.notificationSound.src) {
-      this.notificationSound = new Audio("../notification.MP3");
+      this.notificationSound = new Audio("/static/notification.MP3");
       this.notificationSound.load();
     }
   }
