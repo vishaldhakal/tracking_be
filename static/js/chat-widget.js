@@ -19,7 +19,9 @@ class ChatWidget {
     this.initializeNotifications();
 
     // Use absolute path from static root
-    this.notificationSound = new Audio("/static/notification.MP3");
+    this.notificationSound = new Audio(
+      "https://analytics.homebaba.ca/static/notification.MP3"
+    );
     this.notificationSound.volume = 0.5;
   }
 
