@@ -9,6 +9,7 @@ class ChatWidget {
     this.pollInterval = null;
     this.messages = new Map();
     this.lastMessageTime = 0;
+    this.isOpen = false;
 
     console.log("ChatWidget initialized with config:", config);
     this.injectStyles();
@@ -29,60 +30,91 @@ class ChatWidget {
                 font-family: system-ui, -apple-system, sans-serif;
             }
             .chat-toggle {
-                width: 50px;
-                height: 50px;
+                width: 60px;
+                height: 60px;
                 border-radius: 30px;
-                background: black;
+                background: #2563eb;
                 color: white;
                 border: none;
                 cursor: pointer;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 position: relative;
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+            .chat-toggle:hover {
+                transform: scale(1.05);
+                box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
             }
             .chat-badge {
                 position: absolute;
-                top: -5px;
-                right: -5px;
-                background: black;
+                top: -8px;
+                right: -8px;
+                background: #ef4444;
                 color: white;
-                border-radius: 10px;
-                padding: 2px 6px;
+                border-radius: 20px;
+                padding: 4px 8px;
                 font-size: 12px;
+                font-weight: 600;
                 display: none;
+                animation: pulse 2s infinite;
             }
             .chat-box {
-                position: absolute;
-                bottom: 80px;
-                right: 0;
-                width: 300px;
-                max-height: 400px;
-                min-height: 250px;
-                height: auto;
+                position: fixed;
+                bottom: 100px;
+                right: 20px;
+                width: 380px;
+                height: 600px;
                 background: white;
-                border-radius: 12px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                border-radius: 16px;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.15);
                 display: none;
                 flex-direction: column;
+                transform-origin: bottom right;
+                animation: slideIn 0.3s ease-out;
             }
             .chat-header {
-                padding: 16px;
-                border-bottom: 1px solid #eee;
+                padding: 20px;
+                background: #2563eb;
+                border-radius: 16px 16px 0 0;
+                color: white;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
             }
             .chat-title {
                 font-weight: 600;
+                font-size: 16px;
                 margin: 0;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .chat-title::before {
+                content: '';
+                display: inline-block;
+                width: 8px;
+                height: 8px;
+                background: #4ade80;
+                border-radius: 50%;
             }
             .chat-close {
-                background: none;
+                background: rgba(255,255,255,0.2);
                 border: none;
                 cursor: pointer;
-                color: #666;
+                color: white;
+                width: 30px;
+                height: 30px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background 0.3s ease;
+            }
+            .chat-close:hover {
+                background: rgba(255,255,255,0.3);
             }
             .chat-messages {
                 flex: 1;
@@ -181,8 +213,13 @@ class ChatWidget {
                 opacity: 0.7;
             }
             @keyframes slideIn {
-                0% { transform: translateY(20px); opacity: 0; }
-                100% { transform: translateY(0); opacity: 1; }
+                0% { transform: translateY(20px) scale(0.95); opacity: 0; }
+                100% { transform: translateY(0) scale(1); opacity: 1; }
+            }
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.1); }
+                100% { transform: scale(1); }
             }
         `;
     document.head.appendChild(styles);
@@ -192,21 +229,31 @@ class ChatWidget {
     const widget = document.createElement("div");
     widget.className = "chat-widget";
     widget.innerHTML = `
-            <button class="chat-toggle">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            <button class="chat-toggle" aria-label="Open chat">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
                 </svg>
                 <span class="chat-badge">0</span>
             </button>
             <div class="chat-box">
                 <div class="chat-header">
-                    <h4 class="chat-title">Homebaba Team</h4>
-                    <button class="chat-close">✕</button>
+                    <h4 class="chat-title">Homebaba Support</h4>
+                    <button class="chat-close" aria-label="Close chat">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
                 </div>
                 <div class="chat-messages"></div>
                 <div class="chat-input-container">
-                    <input type="text" class="chat-input" placeholder="Type a message...">
-                    <button class="chat-send">Send</button>
+                    <input type="text" class="chat-input" placeholder="Type your message here...">
+                    <button class="chat-send" aria-label="Send message">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13"></path>
+                            <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+                        </svg>
+                    </button>
                 </div>
             </div>
         `;
@@ -229,11 +276,10 @@ class ChatWidget {
         preview.style.display = "none";
       }
 
-      const isOpening = chatBox.style.display === "none";
-      chatBox.style.display = isOpening ? "flex" : "none";
+      this.isOpen = !this.isOpen;
+      chatBox.style.display = this.isOpen ? "flex" : "none";
 
-      if (isOpening) {
-        // Clear and display all stored messages when opening
+      if (this.isOpen) {
         messagesContainer.innerHTML = "";
         Array.from(this.messages.values())
           .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
@@ -244,14 +290,13 @@ class ChatWidget {
         toggle.classList.remove("has-new");
         input.focus();
 
-        // Scroll to latest message
-        setTimeout(() => {
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }, 100);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
       }
     });
 
-    closeBtn.addEventListener("click", () => {
+    closeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.isOpen = false;
       chatBox.style.display = "none";
     });
 
