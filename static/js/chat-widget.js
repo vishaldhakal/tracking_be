@@ -782,7 +782,6 @@ class ChatWidget {
     preview.className = "chat-preview";
     preview.innerHTML = `
         <div class="chat-preview-content">
-            <strong>New Message:</strong><br>
             ${message.message}
         </div>
         <div class="chat-preview-time">
