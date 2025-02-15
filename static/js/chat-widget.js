@@ -342,7 +342,7 @@ class ChatWidget {
             </button>
             <div class="chat-box">
                 <div class="chat-header">
-                    <h4 class="chat-title">Homebaba Support</h4>
+                    <h4 class="chat-title">Ask Anything</h4>
                     <button class="chat-close" aria-label="Close chat">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
