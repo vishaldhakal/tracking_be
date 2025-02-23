@@ -55,14 +55,34 @@ class Website(models.Model):
                 }});
             }}
 
-            // Only track page view if we have a visitor ID
-            if (shouldTrack()) {{
-                track('Viewed Page', {{
-                    page_title: document.title,
-                    page_url: window.location.href,
-                    page_referrer: document.referrer || null
-                }});
+            // Track page views for identified users
+            function trackPageView() {{
+                if (shouldTrack()) {{
+                    track('Viewed Page', {{
+                        page_title: document.title,
+                        page_url: window.location.href,
+                        page_referrer: document.referrer || null
+                    }});
+                }}
             }}
+
+            // Track initial page load
+            trackPageView();
+
+            // Track page views on route changes (for SPAs)
+            let lastUrl = window.location.href;
+            
+            // Create a new MutationObserver instance
+            const observer = new MutationObserver(function(mutations) {{
+                if (window.location.href !== lastUrl) {{
+                    lastUrl = window.location.href;
+                    // Wait for title to be updated
+                    setTimeout(trackPageView, 100);
+                }}
+            }});
+
+            // Start observing the document with the configured parameters
+            observer.observe(document, {{ subtree: true, childList: true }});
 
             // Track form submissions
             document.addEventListener('submit', function(e) {{
