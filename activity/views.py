@@ -39,7 +39,9 @@ def track_event(request):
         visitor_id = serializer.validated_data.get('visitor_id')
         form_data = serializer.validated_data.get('form_data', {})
         
-        person = None
+        # Try to find existing person by visitor_id
+        person = People.objects.filter(visitor_id=visitor_id).first()
+        
         # Handle form submission data
         if serializer.validated_data.get('event_type') == 'Form Submission' and form_data:
             email = form_data.get('email')
@@ -56,28 +58,36 @@ def track_event(request):
                         'screen_resolution': serializer.validated_data.get('screen_resolution'),
                         'timezone': serializer.validated_data.get('timezone'),
                         'last_activity': timezone.now(),
-                        # You can add more fields here if needed
                     }
                 )
-                
-        # Create activity record
-        activity = Activity.objects.create(
-            website=website,
-            visitor_id=visitor_id,
-            people=person,
-            activity_type=serializer.validated_data.get('event_type'),
-            page_url=serializer.validated_data.get('page_url'),
-            page_title=serializer.validated_data.get('page_title'),
-            page_referrer=serializer.validated_data.get('page_referrer'),
-            form_data=form_data,  # Store the complete form data
-            metadata=serializer.validated_data.get('metadata'),
-            user_agent=serializer.validated_data.get('user_agent'),
-            language=serializer.validated_data.get('language'),
-            screen_resolution=serializer.validated_data.get('screen_resolution'),
-            timezone=serializer.validated_data.get('timezone')
-        )
         
-        return Response(ActivitySerializer(activity).data)
+        # Only create activity record if we have an identified person
+        if person:
+            activity = Activity.objects.create(
+                website=website,
+                visitor_id=visitor_id,
+                people=person,
+                activity_type=serializer.validated_data.get('event_type'),
+                page_url=serializer.validated_data.get('page_url'),
+                page_title=serializer.validated_data.get('page_title'),
+                page_referrer=serializer.validated_data.get('page_referrer'),
+                form_data=form_data,
+                metadata=serializer.validated_data.get('metadata'),
+                user_agent=serializer.validated_data.get('user_agent'),
+                language=serializer.validated_data.get('language'),
+                screen_resolution=serializer.validated_data.get('screen_resolution'),
+                timezone=serializer.validated_data.get('timezone')
+            )
+            
+            # Update person's last activity
+            person.last_activity = timezone.now()
+            person.save(update_fields=['last_activity'])
+            
+            return Response(ActivitySerializer(activity).data)
+            
+        # If no person found, just return success without creating activity
+        return Response({'status': 'success', 'message': 'Event received but not stored (anonymous user)'})
+    
     return Response(serializer.errors, status=400)
 
 @api_view(['POST'])
@@ -147,33 +157,29 @@ def dashboard_stats(request):
     now = timezone.now()
     online_threshold = now - timedelta(minutes=1)
     
-    # Count all online visitors (both anonymous and identified)
-    online_visitors = Activity.objects.filter(
-        last_heartbeat__gte=online_threshold
-    ).values('visitor_id').distinct().count()
+    # Only count activities from identified users
+    total_visits = Activity.objects.filter(
+        activity_type='Viewed Page',
+        people__isnull=False
+    ).count()
     
     # Count identified online visitors
-    identified_online = Activity.objects.filter(
-        last_heartbeat__gte=online_threshold,
+    online_visitors = Activity.objects.filter(
+        occured_at__gte=online_threshold,
         people__isnull=False
     ).values('people').distinct().count()
-    
-    # Get anonymous online count
-    anonymous_online = online_visitors - identified_online
     
     # Get active chats
     active_chats = Chat.objects.filter(status='active')
     
     return Response({
-        'totalVisits': Activity.objects.filter(activity_type='Viewed Page').count(),
+        'totalVisits': total_visits,
         'totalPeople': People.objects.count(),
         'onlineVisitors': online_visitors,
-        'identifiedOnline': identified_online,
-        'anonymousOnline': anonymous_online,
         'activeChats': ChatSerializer(active_chats, many=True).data,
         'recentActivities': ActivitySerializer(
             Activity.objects.select_related('people', 'website')
-            .exclude(activity_type='Heartbeat')
+            .filter(people__isnull=False)  # Only show activities from identified users
             .order_by('-occured_at')[:10], 
             many=True
         ).data
