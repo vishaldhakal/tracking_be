@@ -181,14 +181,10 @@ def dashboard_stats(request):
 
 @api_view(['GET'])
 def people_list(request):
-    now = timezone.now()
-    online_threshold = now - timedelta(minutes=1)
-    
     people = People.objects.annotate(
         is_online=models.Exists(
             Activity.objects.filter(
                 people=models.OuterRef('pk'),
-                last_heartbeat__gte=online_threshold
             )
         )
     ).order_by('-last_activity')
