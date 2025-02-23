@@ -24,7 +24,24 @@ class ActivitySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Activity
-        fields = '__all__'
+        fields = [
+            'id',
+            'website',
+            'people',
+            'activity_type',
+            'message',
+            'page_title',
+            'page_url',
+            'page_referrer',
+            'form_data',
+            'metadata',
+            'occured_at',
+            'visitor_id',
+            'user_agent',
+            'language',
+            'screen_resolution',
+            'timezone',
+        ]
 
 class TrackingEventSerializer(serializers.Serializer):
     site_id = serializers.CharField()
@@ -34,6 +51,7 @@ class TrackingEventSerializer(serializers.Serializer):
     page_url = serializers.CharField(required=False, allow_null=True)
     page_title = serializers.CharField(required=False, allow_null=True)
     page_referrer = serializers.CharField(required=False, allow_null=True)
+    form_data = serializers.JSONField(required=False, allow_null=True)
     metadata = serializers.JSONField(required=False, allow_null=True)
     user_agent = serializers.CharField(required=False, allow_null=True)
     language = serializers.CharField(required=False, allow_null=True)

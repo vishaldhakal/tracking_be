@@ -37,56 +37,44 @@ def track_event(request):
         website = get_object_or_404(Website, site_id=site_id)
         
         visitor_id = serializer.validated_data.get('visitor_id')
-        visitor_email = serializer.validated_data.get('visitor_email')
-
         form_data = serializer.validated_data.get('form_data', {})
         
-        # Try to identify the user
-        email = form_data.get('email')
-
         person = None
-        if email:
-            name = form_data.get('name')
-            phone = form_data.get('phone')
-            
-            # Update or create person with all available identifiers
-            person, created = People.objects.update_or_create(
-                email=email,
-                defaults={
-                    'name': name or email.split('@')[0],
-                    'phone': phone or '',
-                    'visitor_id': visitor_id,
-                    'user_agent': serializer.validated_data.get('user_agent'),
-                    'language': serializer.validated_data.get('language'),
-                    'screen_resolution': serializer.validated_data.get('screen_resolution'),
-                    'timezone': serializer.validated_data.get('timezone'),
-                }
-            )
-            
-        if visitor_email:
-            person = People.objects.filter(email=visitor_email).first()
-            if not person:
-                person = People.objects.create(
-                    email=visitor_email,
-                    name=visitor_email.split('@')[0],
-                    visitor_id=visitor_id
+        # Handle form submission data
+        if serializer.validated_data.get('event_type') == 'Form Submission' and form_data:
+            email = form_data.get('email')
+            if email:
+                # Update or create person with all form data
+                person, created = People.objects.update_or_create(
+                    email=email,
+                    defaults={
+                        'name': form_data.get('name', ''),
+                        'phone': form_data.get('phone', ''),
+                        'visitor_id': visitor_id,
+                        'user_agent': serializer.validated_data.get('user_agent'),
+                        'language': serializer.validated_data.get('language'),
+                        'screen_resolution': serializer.validated_data.get('screen_resolution'),
+                        'timezone': serializer.validated_data.get('timezone'),
+                        'last_activity': timezone.now(),
+                        # You can add more fields here if needed
+                    }
                 )
                 
-        # Create activity for both anonymous and identified users
+        # Create activity record
         activity = Activity.objects.create(
             website=website,
-            visitor_id=visitor_id,  # Always store visitor_id
-            people=person,  # This can be None for anonymous users
+            visitor_id=visitor_id,
+            people=person,
             activity_type=serializer.validated_data.get('event_type'),
             page_url=serializer.validated_data.get('page_url'),
             page_title=serializer.validated_data.get('page_title'),
             page_referrer=serializer.validated_data.get('page_referrer'),
+            form_data=form_data,  # Store the complete form data
             metadata=serializer.validated_data.get('metadata'),
             user_agent=serializer.validated_data.get('user_agent'),
             language=serializer.validated_data.get('language'),
             screen_resolution=serializer.validated_data.get('screen_resolution'),
-            timezone=serializer.validated_data.get('timezone'),
-            last_heartbeat=timezone.now() if serializer.validated_data.get('event_type') == 'Heartbeat' else None
+            timezone=serializer.validated_data.get('timezone')
         )
         
         return Response(ActivitySerializer(activity).data)

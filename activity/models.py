@@ -21,45 +21,22 @@ class Website(models.Model):
     def generate_tracking_code(self):
         return f"""
         <script>
-        function loadChatWidget(callback) {{
-            const script = document.createElement('script');
-            script.src = '{settings.SITE_URL}/{settings.STATIC_URL}js/chat-widget.js';
-            script.onload = callback;
-            document.head.appendChild(script);
-        }}
-
         (function() {{
             const TRACKING_URL = '{settings.SITE_URL}/api/track/';
-            const CHAT_URL = '{settings.SITE_URL}/api/chat/';
             const SITE_ID = '{self.site_id}';
-            let pageStartTime = Date.now();
             let visitorId = localStorage.getItem('visitorId');
-            let visitorEmail = localStorage.getItem('visitorEmail');
-            let heartbeatInterval;
 
-            function generateFingerprint() {{
-                const screen = `${{window.screen.width}}x${{window.screen.height}}`;
-                const colorDepth = window.screen.colorDepth;
-                const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                const language = navigator.language;
-                const platform = navigator.platform;
-                const fingerprint = btoa(`${{screen}}-${{colorDepth}}-${{timezone}}-${{language}}-${{platform}}`);
-                
-                if (!localStorage.getItem('visitorId')) {{
-                    localStorage.setItem('visitorId', fingerprint);
-                    visitorId = fingerprint;
-                }}
-                return fingerprint;
-            }}
-
-            if (!visitorId) {{
-                visitorId = generateFingerprint();
+            // Only track if we have a visitor ID from a previous form submission
+            function shouldTrack() {{
+                return !!localStorage.getItem('visitorId');
             }}
 
             function track(eventType, data) {{
+                // Don't track if we don't have a visitor ID
+                if (!shouldTrack()) return;
+
                 const commonData = {{
-                    visitor_id: visitorId || generateFingerprint,
-                    visitor_email: visitorEmail,
+                    visitor_id: visitorId,
                     user_agent: navigator.userAgent,
                     language: navigator.language,
                     screen_resolution: `${{window.screen.width}}x${{window.screen.height}}`,
@@ -78,81 +55,42 @@ class Website(models.Model):
                 }});
             }}
 
-            function trackPageDuration(isHeartbeat = false) {{
-                const duration = Math.round((Date.now() - pageStartTime) / 1000);
-                track(isHeartbeat ? 'Heartbeat' : 'Viewed Page', {{
+            // Only track page view if we have a visitor ID
+            if (shouldTrack()) {{
+                track('Viewed Page', {{
                     page_title: document.title,
                     page_url: window.location.href,
-                    page_referrer: document.referrer || null,
-                    page_duration: duration
+                    page_referrer: document.referrer || null
                 }});
             }}
 
-            function startHeartbeat() {{
-                heartbeatInterval = setInterval(() => {{
-                    trackPageDuration(true);
-                }}, 30000);
-            }}
-
-            function stopHeartbeat() {{
-                if (heartbeatInterval) {{
-                    clearInterval(heartbeatInterval);
-                }}
-            }}
-
-            // Track initial page view
-            track('Viewed Page', {{
-                page_title: document.title,
-                page_url: window.location.href,
-                page_referrer: document.referrer || null
-            }});
-            startHeartbeat();
-
-            // Load chat widget and initialize after it's loaded
-            loadChatWidget(function() {{
-                const chatWidget = new ChatWidget({{
-                    TRACKING_URL,
-                    CHAT_URL,
-                    SITE_ID
-                }});
-            }});
-
+            // Track form submissions
             document.addEventListener('submit', function(e) {{
                 const form = e.target;
                 const formData = new FormData(form);
                 const data = {{}};
-                formData.forEach((value, key) => data[key] = value);
+                let hasEmail = false;
                 
-                if (data.email) {{
-                    localStorage.setItem('visitorEmail', data.email);
-                    localStorage.setItem('visitorId', btoa(data.email));
-                    visitorEmail = data.email;
-                    visitorId = btoa(data.email);
-                }}
+                // Capture all form fields
+                formData.forEach((value, key) => {{
+                    data[key] = value;
+                    // If the field is email, set up visitor tracking
+                    if (key === 'email') {{
+                        hasEmail = true;
+                        localStorage.setItem('visitorId', btoa(value));
+                        visitorId = btoa(value);
+                    }}
+                }});
                 
-                track('Form Submission', {{
-                    form_data: data,
-                    form_id: form.id || 'unknown',
-                    page_url: window.location.href,
+                // Only track form submission if it contains an email
+                if (hasEmail) {{
+                    track('Form Submission', {{
+                        form_data: data,
+                        form_id: form.id || 'unknown',
+                        page_url: window.location.href,
                         page_referrer: document.referrer || null
                     }});
-            }});
-
-            // Handle page visibility
-            document.addEventListener('visibilitychange', function() {{
-                if (document.hidden) {{
-                    trackPageDuration();
-                    stopHeartbeat();
-                }} else {{
-                    pageStartTime = Date.now();
-                    startHeartbeat();
                 }}
-            }});
-
-            // Track page duration before user leaves
-            window.addEventListener('beforeunload', () => {{
-                trackPageDuration();
-                stopHeartbeat();
             }});
         }})();
         </script>
@@ -225,7 +163,6 @@ class Activity(models.Model):
     ACTIVITY_TYPE_CHOICES = [
         ("Viewed Page", "Viewed Page"),
         ("Form Submission", "Form Submission"),
-        ("Heartbeat", "Heartbeat"),
         ("Inquiry", "Inquiry"),
     ]
 
@@ -236,7 +173,6 @@ class Activity(models.Model):
     page_title = models.CharField(max_length=255, blank=True, null=True)
     page_url = models.URLField(blank=True, null=True)
     page_referrer = models.URLField(blank=True, null=True, max_length=2000)
-    page_duration = models.IntegerField(blank=True, null=True)
     form_data = models.JSONField(blank=True, null=True)
     metadata = models.JSONField(blank=True, null=True)
     occured_at = models.DateTimeField(auto_now_add=True)
@@ -245,7 +181,6 @@ class Activity(models.Model):
     language = models.CharField(max_length=10, blank=True, null=True)
     screen_resolution = models.CharField(max_length=50, blank=True, null=True)
     timezone = models.CharField(max_length=100, blank=True, null=True)
-    last_heartbeat = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         website_name = self.website.name or self.website.domain if self.website else "Unknown Website"
@@ -259,12 +194,6 @@ class Activity(models.Model):
             models.Index(fields=["occured_at"]),
         ]
         verbose_name_plural = "Activities"
-
-    @property
-    def is_online(self):
-        if not self.last_heartbeat:
-            return False
-        return (timezone.now() - self.last_heartbeat).total_seconds() < 60
 
     @property
     def is_anonymous(self):
