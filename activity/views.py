@@ -9,6 +9,7 @@ from .serializers import (
     TrackingEventSerializer,
     PeopleSerializer,
     ChatSerializer,
+    ActivitySmallSerializer,
     ChatMessageSerializer
 )
 from django.shortcuts import get_object_or_404
@@ -205,7 +206,7 @@ def person_detail(request, pk):
 @api_view(['GET'])
 def person_activities(request, pk):
     activities = Activity.objects.filter(people_id=pk).order_by('-occured_at')
-    return Response(ActivitySerializer(activities, many=True).data)
+    return Response(ActivitySmallSerializer(activities, many=True).data)
 
 @api_view(['GET'])
 def chat_messages(request, chat_id):

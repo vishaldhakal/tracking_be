@@ -18,6 +18,12 @@ class PeopleSerializer(serializers.ModelSerializer):
             'is_online'
         ]
 
+
+class ActivitySmallSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Activity
+        fields = ['id', 'activity_type', 'page_title', 'occured_at','page_url','form_data']
+
 class ActivitySerializer(serializers.ModelSerializer):
     website = WebsiteSerializer()
     people = PeopleSerializer()
