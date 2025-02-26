@@ -121,14 +121,7 @@ class PeopleListCreateView(generics.ListCreateAPIView):
     ordering = ['-last_activity']
     
     def get_queryset(self):
-        return People.objects.annotate(
-            is_online=models.Exists(
-                Activity.objects.filter(
-                    people=models.OuterRef('pk'),
-                    occured_at__gte=timezone.now() - timezone.timedelta(minutes=5)
-                )
-            )
-        )
+        return People.objects.all()
 
 class PeopleRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = People.objects.all()
