@@ -7,6 +7,24 @@ class WebsiteSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'site_id', 'tracking_code', 'domain', 'created_at']
         read_only_fields = ['site_id', 'tracking_code']
 
+class ActivitySmallSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Activity
+        fields = ['id', 'activity_type', 'page_title', 'occured_at','page_url','form_data']
+
+class PeopleWithActivitiesSerializer(serializers.ModelSerializer):
+    activities = serializers.SerializerMethodField()
+    class Meta:
+        model = People
+        fields = [
+            'id', 'name', 'email', 'phone', 'last_activity', 
+            'stage', 'source', 'source_url', 'created_at',
+            'activities'
+        ]
+    def get_activities(self, obj):
+        activities = Activity.objects.filter(people=obj).order_by('-occured_at')[:2]
+        return ActivitySmallSerializer(activities, many=True).data
+
 class PeopleSerializer(serializers.ModelSerializer):
     is_online = serializers.BooleanField(read_only=True)
     
@@ -18,11 +36,6 @@ class PeopleSerializer(serializers.ModelSerializer):
             'is_online'
         ]
 
-
-class ActivitySmallSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Activity
-        fields = ['id', 'activity_type', 'page_title', 'occured_at','page_url','form_data']
 
 class ActivitySerializer(serializers.ModelSerializer):
     website = WebsiteSerializer()

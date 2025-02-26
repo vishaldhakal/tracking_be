@@ -94,8 +94,7 @@ def people_list(request):
                 people=models.OuterRef('pk'),
             )
         )
-    ).order_by('-last_activity')
-    
+    ).order_by('-last_activity')[:10]
     return Response(PeopleSerializer(people, many=True).data)
 
 @api_view(['GET'])
