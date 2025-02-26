@@ -1,8 +1,6 @@
 from django.db import models
 import uuid
 from django.conf import settings
-from django.utils import timezone
-from pathlib import Path
 
 class Website(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -167,7 +165,6 @@ class People(models.Model):
     user_agent = models.TextField(blank=True, null=True)
     language = models.CharField(max_length=10, blank=True, null=True)
     screen_resolution = models.CharField(max_length=50, blank=True, null=True)
-    timezone = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -220,41 +217,4 @@ class Activity(models.Model):
         return self.people is None
 
 
-class Chat(models.Model):
-    CHAT_STATUS = (
-        ('active', 'Active'),
-        ('closed', 'Closed'),
-    )
-    
-    website = models.ForeignKey(Website, on_delete=models.CASCADE)
-    visitor_id = models.CharField(max_length=255)
-    people = models.ForeignKey(People, on_delete=models.SET_NULL, null=True, blank=True)
-    status = models.CharField(max_length=20, choices=CHAT_STATUS, default='active')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    unread_count = models.IntegerField(default=0)
-    last_message = models.TextField(blank=True, null=True)
 
-    def __str__(self):
-        website_name = self.website.domain if self.website else "Unknown Website"
-        person_name = self.people.name if self.people else f"Anonymous ({self.visitor_id})"
-        return f"Chat with {person_name} on {website_name}"
-
-    class Meta:
-        ordering = ['-updated_at']
-        verbose_name = "Chat"
-        verbose_name_plural = "Chats"
-
-    def update_last_message(self, message_text):
-        self.last_message = message_text
-        self.save(update_fields=['last_message', 'updated_at'])
-
-
-class ChatMessage(models.Model):
-    chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name='messages')
-    is_admin = models.BooleanField(default=False)
-    message = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['created_at']

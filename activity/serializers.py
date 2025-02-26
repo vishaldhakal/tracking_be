@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Website, Activity, People, Tag, Chat, ChatMessage
+from .models import Website, Activity, People, Tag
 
 class WebsiteSerializer(serializers.ModelSerializer):
     class Meta:
@@ -46,7 +46,6 @@ class ActivitySerializer(serializers.ModelSerializer):
             'user_agent',
             'language',
             'screen_resolution',
-            'timezone',
         ]
 
 class TrackingEventSerializer(serializers.Serializer):
@@ -62,26 +61,3 @@ class TrackingEventSerializer(serializers.Serializer):
     user_agent = serializers.CharField(required=False, allow_null=True)
     language = serializers.CharField(required=False, allow_null=True)
     screen_resolution = serializers.CharField(required=False, allow_null=True)
-    timezone = serializers.CharField(required=False, allow_null=True)
-
-class ChatMessageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ChatMessage
-        fields = ['id', 'chat', 'message', 'is_admin', 'created_at']
-
-class ChatSerializer(serializers.ModelSerializer):
-    last_heartbeat = serializers.SerializerMethodField()
-
-    def get_last_heartbeat(self, obj):
-        last_activity = Activity.objects.filter(
-            visitor_id=obj.visitor_id,
-            activity_type='Heartbeat'
-        ).order_by('-last_heartbeat').first()
-        return last_activity.last_heartbeat if last_activity else None
-
-    messages = ChatMessageSerializer(many=True, read_only=True)
-    people = PeopleSerializer(read_only=True)
-    
-    class Meta:
-        model = Chat
-        fields = '__all__'

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
-from .models import Website, Activity, People, Tag, Chat, ChatMessage
+from .models import Website, Activity, People, Tag
 
 @admin.register(Website)
 class WebsiteAdmin(ModelAdmin):
@@ -43,24 +43,3 @@ class TagAdmin(ModelAdmin):
     list_display = ['name']
     search_fields = ['name']
 
-@admin.register(Chat)
-class ChatAdmin(ModelAdmin):
-    list_display = ['get_visitor', 'website', 'status', 'unread_count', 'created_at']
-    list_filter = ['status', 'website', 'created_at']
-    search_fields = ['visitor_id', 'people__name', 'people__email']
-    readonly_fields = ['unread_count', 'last_message']
-
-    def get_visitor(self, obj):
-        return obj.people.name if obj.people else f"Anonymous ({obj.visitor_id})"
-    get_visitor.short_description = 'Visitor'
-
-@admin.register(ChatMessage)
-class ChatMessageAdmin(ModelAdmin):
-    list_display = ['chat', 'is_admin', 'message_preview', 'created_at']
-    list_filter = ['is_admin', 'created_at', 'chat__status']
-    search_fields = ['message', 'chat__visitor_id', 'chat__people__name']
-    readonly_fields = ['created_at']
-
-    def message_preview(self, obj):
-        return obj.message[:50] + '...' if len(obj.message) > 50 else obj.message
-    message_preview.short_description = 'Message'
