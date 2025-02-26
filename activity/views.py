@@ -114,7 +114,6 @@ def person_activities(request, pk):
 class PeopleListCreateView(generics.ListCreateAPIView):
     queryset = People.objects.all()
     serializer_class = PeopleWithActivitiesSerializer
-    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = PeopleFilter
     search_fields = ['name', 'email', 'phone']
@@ -134,5 +133,4 @@ class PeopleListCreateView(generics.ListCreateAPIView):
 class PeopleRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = People.objects.all()
     serializer_class = PeopleWithActivitiesSerializer
-    permission_classes = [IsAuthenticated]
 
