@@ -1,7 +1,9 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
 from .models import Website, Activity, People
 from .serializers import (
     WebsiteSerializer, 
@@ -11,6 +13,7 @@ from .serializers import (
     ActivitySmallSerializer,
     PeopleWithActivitiesSerializer,
 )
+from .filters import PeopleFilter
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db import models
@@ -107,4 +110,29 @@ def person_detail(request, pk):
 def person_activities(request, pk):
     activities = Activity.objects.filter(people_id=pk).order_by('-occured_at')
     return Response(ActivitySmallSerializer(activities, many=True).data)
+
+class PeopleListCreateView(generics.ListCreateAPIView):
+    queryset = People.objects.all()
+    serializer_class = PeopleWithActivitiesSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = PeopleFilter
+    search_fields = ['name', 'email', 'phone']
+    ordering_fields = ['name', 'created_at', 'last_activity']
+    ordering = ['-last_activity']
+    
+    def get_queryset(self):
+        return People.objects.annotate(
+            is_online=models.Exists(
+                Activity.objects.filter(
+                    people=models.OuterRef('pk'),
+                    occured_at__gte=timezone.now() - timezone.timedelta(minutes=5)
+                )
+            )
+        )
+
+class PeopleRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = People.objects.all()
+    serializer_class = PeopleWithActivitiesSerializer
+    permission_classes = [IsAuthenticated]
 
