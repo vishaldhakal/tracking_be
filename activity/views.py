@@ -9,6 +9,7 @@ from .serializers import (
     TrackingEventSerializer,
     PeopleSerializer,
     ActivitySmallSerializer,
+    PeopleWithActivitiesSerializer,
 )
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -95,7 +96,7 @@ def people_list(request):
             )
         )
     ).order_by('-last_activity')[:10]
-    return Response(PeopleSerializer(people, many=True).data)
+    return Response(PeopleWithActivitiesSerializer(people, many=True).data)
 
 @api_view(['GET'])
 def person_detail(request, pk):
