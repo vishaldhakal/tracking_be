@@ -107,6 +107,7 @@ def person_detail(request, pk):
     return Response(PeopleSerializer(person).data)
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def person_activities(request, pk):
     activities = Activity.objects.filter(people_id=pk).order_by('-occured_at')
     return Response(ActivitySmallSerializer(activities, many=True).data)
@@ -114,6 +115,7 @@ def person_activities(request, pk):
 class PeopleListCreateView(generics.ListCreateAPIView):
     queryset = People.objects.all()
     serializer_class = PeopleWithActivitiesSerializer
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = PeopleFilter
     search_fields = ['name', 'email', 'phone']
@@ -121,9 +123,17 @@ class PeopleListCreateView(generics.ListCreateAPIView):
     ordering = ['-last_activity']
     
     def get_queryset(self):
-        return People.objects.all()
+        return People.objects.annotate(
+            is_online=models.Exists(
+                Activity.objects.filter(
+                    people=models.OuterRef('pk'),
+                    occured_at__gte=timezone.now() - timezone.timedelta(minutes=5)
+                )
+            )
+        )
 
 class PeopleRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = People.objects.all()
     serializer_class = PeopleWithActivitiesSerializer
+    permission_classes = [AllowAny]
 
