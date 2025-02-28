@@ -213,6 +213,3 @@ class Activity(models.Model):
     @property
     def is_anonymous(self):
         return self.people is None
-
-
-
