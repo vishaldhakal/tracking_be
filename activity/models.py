@@ -38,7 +38,6 @@ class Website(models.Model):
                     user_agent: navigator.userAgent,
                     language: navigator.language,
                     screen_resolution: `${{window.screen.width}}x${{window.screen.height}}`,
-                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
                 }};
 
                 fetch(TRACKING_URL, {{
@@ -197,7 +196,6 @@ class Activity(models.Model):
     user_agent = models.TextField(blank=True, null=True)
     language = models.CharField(max_length=10, blank=True, null=True)
     screen_resolution = models.CharField(max_length=50, blank=True, null=True)
-    timezone = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
         website_name = self.website.name or self.website.domain if self.website else "Unknown Website"
