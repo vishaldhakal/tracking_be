@@ -56,7 +56,6 @@ def track_event(request):
                         'user_agent': serializer.validated_data.get('user_agent'),
                         'language': serializer.validated_data.get('language'),
                         'screen_resolution': serializer.validated_data.get('screen_resolution'),
-                        'timezone': serializer.validated_data.get('timezone'),
                         'last_activity': timezone.now(),
                     }
                 )
@@ -76,7 +75,6 @@ def track_event(request):
                 user_agent=serializer.validated_data.get('user_agent'),
                 language=serializer.validated_data.get('language'),
                 screen_resolution=serializer.validated_data.get('screen_resolution'),
-                timezone=serializer.validated_data.get('timezone')
             )
             
             # Update person's last activity
