@@ -57,6 +57,7 @@ def track_event(request):
                         'language': serializer.validated_data.get('language'),
                         'screen_resolution': serializer.validated_data.get('screen_resolution'),
                         'last_activity': timezone.now(),
+                        'stage': 'Contact',
                     }
                 )
         

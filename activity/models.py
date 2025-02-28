@@ -153,7 +153,7 @@ class People(models.Model):
     phone = models.CharField(max_length=100)
     last_activity = models.DateTimeField(blank=True, null=True)
     stage = models.CharField(
-        max_length=100, blank=True, null=True, choices=STAGE_CHOICES
+        max_length=100, blank=True, null=True, choices=STAGE_CHOICES,default="Contact"
     )
     source = models.CharField(max_length=100, blank=True, null=True)
     source_url = models.URLField(blank=True, null=True)
