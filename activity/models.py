@@ -118,13 +118,6 @@ class Website(models.Model):
             return f"Website {self.site_id}"
         return self.name or self.domain
 
-    def delete(self, *args, **kwargs):
-        # Delete related chats first
-        self.chat_set.all().delete()
-        # Delete related activities
-        self.activity_set.all().delete()
-        super().delete(*args, **kwargs)
-
     class Meta:
         verbose_name = "Website"
         verbose_name_plural = "Websites"
