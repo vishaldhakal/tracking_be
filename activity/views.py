@@ -113,7 +113,7 @@ def person_activities(request, pk):
     return Response(ActivitySmallSerializer(activities, many=True).data)
 
 class CustomPagination(PageNumberPagination):
-    page_size = 100
+    page_size = 30
 
 class PeopleListCreateView(generics.ListCreateAPIView):
     queryset = People.objects.all()
