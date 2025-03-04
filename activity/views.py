@@ -120,6 +120,7 @@ class PeopleListCreateView(generics.ListCreateAPIView):
     search_fields = ['name', 'email', 'phone']
     ordering_fields = ['name', 'created_at', 'last_activity']
     ordering = ['-last_activity']
+    page_size = 30
     
     def get_queryset(self):
         return People.objects.annotate(
