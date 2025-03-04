@@ -17,6 +17,7 @@ from .filters import PeopleFilter
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db import models
+from rest_framework.pagination import PageNumberPagination
 
 class WebsiteViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -111,6 +112,9 @@ def person_activities(request, pk):
     activities = Activity.objects.filter(people_id=pk).order_by('-occured_at')
     return Response(ActivitySmallSerializer(activities, many=True).data)
 
+class CustomPagination(PageNumberPagination):
+    page_size = 100
+
 class PeopleListCreateView(generics.ListCreateAPIView):
     queryset = People.objects.all()
     serializer_class = PeopleWithActivitiesSerializer
@@ -120,7 +124,7 @@ class PeopleListCreateView(generics.ListCreateAPIView):
     search_fields = ['name', 'email', 'phone']
     ordering_fields = ['name', 'created_at', 'last_activity']
     ordering = ['-last_activity']
-    page_size = 30
+    pagination_class = CustomPagination
     
     def get_queryset(self):
         return People.objects.annotate(
