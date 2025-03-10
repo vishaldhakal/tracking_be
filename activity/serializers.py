@@ -36,6 +36,10 @@ class PeopleSerializer(serializers.ModelSerializer):
             'is_online'
         ]
 
+class PeopleFromVisitorIdSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = People
+        fields = ['id', 'name']
 
 class ActivitySerializer(serializers.ModelSerializer):
     website = WebsiteSerializer()

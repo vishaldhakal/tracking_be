@@ -12,6 +12,7 @@ from .serializers import (
     PeopleSerializer,
     ActivitySmallSerializer,
     PeopleWithActivitiesSerializer,
+    PeopleFromVisitorIdSerializer,
 )
 from .filters import PeopleFilter
 from django.shortcuts import get_object_or_404
@@ -143,7 +144,7 @@ class PeopleRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class PeopleFromVisitorIdView(generics.ListAPIView):
-    serializer_class = PeopleWithActivitiesSerializer
+    serializer_class = PeopleFromVisitorIdSerializer
     permission_classes = [AllowAny]
 
     def get_queryset(self):
