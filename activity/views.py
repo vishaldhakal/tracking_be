@@ -141,3 +141,11 @@ class PeopleRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PeopleWithActivitiesSerializer
     permission_classes = [AllowAny]
 
+
+class PeopleFromVisitorIdView(generics.ListAPIView):
+    serializer_class = PeopleWithActivitiesSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        visitor_id = self.kwargs['visitor_id']
+        return People.objects.filter(visitor_id=visitor_id)

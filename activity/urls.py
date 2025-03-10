@@ -3,11 +3,10 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     WebsiteViewSet, 
     track_event,
-    people_list, 
-    person_detail, 
     person_activities,
     PeopleListCreateView,
-    PeopleRetrieveUpdateDestroyView
+    PeopleRetrieveUpdateDestroyView,
+    PeopleFromVisitorIdView
 )
 
 router = DefaultRouter()
@@ -18,6 +17,7 @@ urlpatterns = [
     path('people/list/', PeopleListCreateView.as_view(), name='people-list-create'),
     path('people/<int:pk>/', PeopleRetrieveUpdateDestroyView.as_view(), name='people-detail'),
     path('people/<int:pk>/activities/', person_activities, name='person-activities'),
+    path('people/visitor_id/<str:visitor_id>/', PeopleFromVisitorIdView.as_view(), name='people-from-visitor-id'),
 ]
 
 urlpatterns += router.urls
